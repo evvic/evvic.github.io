@@ -1,0 +1,53 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set working directory
+        run: cd game-portfolio
+
+      - name: Use Node.js
+        uses: actions/node@v3
+        with:
+          node-version: 16  # Adjust based on your project's requirements
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build with Vite
+        run: npm run build
+
+      - name: Deploy production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-build
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}
+          ref: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download production artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: production-build
+
+      - name: Deploy production build
+        run: |
+          mv dist/* ./
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Deploy production build"
+          git push origin gh-pages
